@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute - Veilig naar huis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Startscherm -->
+    <div id="startScreen" class="screen active">
+        <div class="container">
+            <div class="logo">
+                <h1>🛡️ SafeRoute</h1>
+                <p class="tagline">Veilig van school naar huis</p>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="showMapScreen()">
+                    📍 Kaart bekijken
+                </button>
+                <button class="btn btn-secondary" onclick="showHomeSetup()">
+                    🏠 Thuislocatie instellen
+                </button>
+                <button class="btn btn-secondary" onclick="showMapScreen(); showReportModal()">
+                    ⚠️ Gevaarlijke plek melden
+                </button>
+                <button class="btn btn-secondary" onclick="showDangerousPlaces()">
+                    🗺️ Gevaarlijke plekken bekijken
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kaartscherm -->
+    <div id="mapScreen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="showStartScreen()">← Terug</button>
+            <h2>SafeRoute Kaart</h2>
+        </div>
+        <div id="map"></div>
+        <div class="map-controls">
+            <button class="btn-control" onclick="calculateRoute()">
+                🧭 Route naar huis
+            </button>
+            <button class="btn-control" onclick="showReportModal()">
+                ⚠️ Melding maken
+            </button>
+            <button class="btn-control" onclick="toggleDangerousPlaces()">
+                <span id="toggleText">🔴 Toon gevaarlijke plekken</span>
+            </button>
+        </div>
+        <div id="routeInfo" class="route-info"></div>
+    </div>
+
+    <!-- Thuislocatie instellen scherm -->
+    <div id="homeSetupScreen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="showStartScreen()">← Terug</button>
+            <h2>Thuislocatie instellen</h2>
+        </div>
+        <div class="container">
+            <div class="form-group">
+                <label for="homeAddress">Adres:</label>
+                <input type="text" id="homeAddress" placeholder="Voer je adres in">
+                <button class="btn btn-small" onclick="geocodeAddress()">Zoek op kaart</button>
+            </div>
+            <div class="form-group">
+                <label>Of gebruik huidige locatie:</label>
+                <button class="btn btn-primary" onclick="useCurrentLocation()">
+                    📍 Gebruik mijn locatie
+                </button>
+            </div>
+            <div id="homeMap" class="mini-map"></div>
+            <div class="form-group">
+                <label for="homeName">Naam voor deze locatie:</label>
+                <input type="text" id="homeName" placeholder="Bijv. Thuis, Oma, Opvang">
+            </div>
+            <button class="btn btn-primary" onclick="saveHomeLocation()">
+                💾 Opslaan
+            </button>
+            <div id="savedHomes" class="saved-homes"></div>
+        </div>
+    </div>
+
+    <!-- Gevaarlijke plekken scherm -->
+    <div id="dangerousPlacesScreen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="showStartScreen()">← Terug</button>
+            <h2>Gevaarlijke plekken</h2>
+        </div>
+        <div class="container">
+            <div id="dangerousPlacesList" class="places-list"></div>
+        </div>
+    </div>
+
+    <!-- Melding Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeReportModal()">&times;</span>
+            <h2>Gevaarlijke plek melden</h2>
+            <div class="form-group">
+                <label for="reportType">Type gevaar:</label>
+                <select id="reportType">
+                    <option value="dark">Donkere plek</option>
+                    <option value="people">Vreemde personen</option>
+                    <option value="traffic">Onveilig verkeer</option>
+                    <option value="other">Anders</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="reportDescription">Beschrijving:</label>
+                <textarea id="reportDescription" rows="3" placeholder="Beschrijf wat er gevaarlijk is..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Locatie:</label>
+                <p id="reportLocation">Wordt automatisch bepaald...</p>
+                <button class="btn btn-small" onclick="useCurrentLocationForReport()">
+                    📍 Gebruik huidige locatie
+                </button>
+            </div>
+            <button class="btn btn-primary" onclick="submitReport()">
+                📤 Versturen
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="app.js"></script>
+</body>
+</html>
+

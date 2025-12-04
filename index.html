@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute - Veilig naar huis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading scherm -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-inner">
+            <img src="logo.svg" alt="SafeRoute logo" class="loading-logo">
+            <p class="loading-text">SafeRoute wordt geladen...</p>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- (Oud) startscherm - verborgen, niet meer in gebruik -->
+    <div id="startScreen" style="display: none;">
+        <div class="container">
+            <div class="logo">
+                <img src="logo.svg" alt="SafeRoute Logo" class="logo-image">
+                <p class="tagline">Veilig van school naar huis</p>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="showMapScreen()">
+                    <span class="btn-icon">🗺</span>
+                    <span>Kaart bekijken</span>
+                </button>
+                <button class="btn btn-secondary" onclick="showHomeSetup()">
+                    <span class="btn-icon">🏠</span>
+                    <span>Thuislocatie instellen</span>
+                </button>
+                <button class="btn btn-secondary" onclick="showMapScreen(); showReportModal()">
+                    <span class="btn-icon">⚠</span>
+                    <span>Gevaarlijke plek melden</span>
+                </button>
+                <button class="btn btn-secondary" onclick="showDangerousPlaces()">
+                    <span class="btn-icon">📍</span>
+                    <span>Gevaarlijke plekken bekijken</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kaartscherm (hoofdpagina) -->
+    <div id="mapScreen" class="screen active">
+        <div class="header">
+            <div class="header-left">
+                <img src="logo.svg" alt="SafeRoute" class="header-logo">
+                <h2>Kaart</h2>
+            </div>
+            <div class="header-right">
+                <span id="currentUserLabel" class="user-label">Niet ingelogd</span>
+                <button class="btn btn-small btn-outline header-login-btn" onclick="openAuthModal()">
+                    Inloggen
+                </button>
+            </div>
+        </div>
+        <div id="map"></div>
+        <div class="map-controls">
+            <button class="btn-control" onclick="calculateRoute()">
+                <span>Route naar huis</span>
+            </button>
+            <button class="btn-control btn-control-secondary" onclick="showReportModal()">
+                <span>Melding maken</span>
+            </button>
+            <button class="btn-control btn-control-outline" onclick="toggleDangerousPlaces()">
+                <span id="toggleText">Toon gevaarlijke plekken</span>
+            </button>
+            <button class="btn-control btn-control-outline" onclick="showHomeSetup()">
+                <span>Thuislocatie instellen</span>
+            </button>
+            <button class="btn-control btn-control-outline" onclick="showDangerousPlaces()">
+                <span>Gevaarlijke plekken (lijst)</span>
+            </button>
+        </div>
+        <div id="routeInfo" class="route-info"></div>
+    </div>
+
+    <!-- Thuislocatie instellen scherm -->
+    <div id="homeSetupScreen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="showStartScreen()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <img src="logo.svg" alt="SafeRoute" class="header-logo">
+            <h2>Thuislocatie</h2>
+        </div>
+        <div class="container">
+            <div class="form-group">
+                <label for="homeAddress">Adres:</label>
+                <input type="text" id="homeAddress" placeholder="Voer je adres in">
+                <button class="btn btn-small" onclick="geocodeAddress()">Zoek</button>
+            </div>
+            <div class="form-group">
+                <label>Of gebruik huidige locatie:</label>
+                <button class="btn btn-outline" onclick="useCurrentLocation()">
+                    Gebruik mijn locatie
+                </button>
+            </div>
+            <div id="homeMap" class="mini-map"></div>
+            <div class="form-group">
+                <label for="homeName">Naam voor deze locatie:</label>
+                <input type="text" id="homeName" placeholder="Bijv. Thuis, Oma, Opvang">
+            </div>
+            <button class="btn btn-primary" onclick="saveHomeLocation()">
+                Opslaan
+            </button>
+            <div id="savedHomes" class="saved-homes"></div>
+        </div>
+    </div>
+
+    <!-- Gevaarlijke plekken scherm -->
+    <div id="dangerousPlacesScreen" class="screen">
+        <div class="header">
+            <button class="btn-back" onclick="showStartScreen()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <img src="logo.svg" alt="SafeRoute" class="header-logo">
+            <h2>Gevaarlijke plekken</h2>
+        </div>
+        <div class="container">
+            <div class="dangerous-actions">
+                <button class="btn btn-small btn-outline" onclick="clearAllReports()">
+                    Alle meldingen verwijderen
+                </button>
+            </div>
+            <div id="dangerousPlacesList" class="places-list"></div>
+        </div>
+    </div>
+
+    <!-- Melding Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeReportModal()">&times;</span>
+            <h2>Gevaarlijke plek melden</h2>
+            <div class="form-group">
+                <label for="reportType">Type gevaar:</label>
+                <select id="reportType">
+                    <option value="dark">Donkere plek</option>
+                    <option value="people">Vreemde personen</option>
+                    <option value="traffic">Onveilig verkeer</option>
+                    <option value="other">Anders</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="reportDescription">Beschrijving:</label>
+                <textarea id="reportDescription" rows="3" placeholder="Beschrijf wat er gevaarlijk is..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Locatie:</label>
+                <p id="reportLocation">Wordt automatisch bepaald...</p>
+                <button class="btn btn-outline btn-small" onclick="useCurrentLocationForReport()">
+                    Gebruik huidige locatie
+                </button>
+            </div>
+            <button class="btn btn-primary" onclick="submitReport()">
+                Versturen
+            </button>
+        </div>
+    </div>
+
+    <!-- Inlog / account Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAuthModal()">&times;</span>
+            <h2>Inloggen</h2>
+            <div class="form-group">
+                <label for="usernameInput">Gebruikersnaam</label>
+                <input type="text" id="usernameInput" placeholder="Bijv. naam of bijnaam">
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1.5rem;">
+                Dit is een lokale demo-inlog. Alles wordt alleen op dit apparaat opgeslagen.
+            </p>
+            <button class="btn btn-primary" onclick="login()">
+                Inloggen
+            </button>
+            <button class="btn btn-outline btn-small" onclick="logout()" style="margin-left: 0.5rem;">
+                Uitloggen
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="app.js"></script>
+</body>
+</html>
+
